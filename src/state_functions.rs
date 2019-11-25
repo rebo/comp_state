@@ -8,7 +8,7 @@ use std::collections::HashSet;
 /// All state changing and accessing calls will panic unless this is setup.
 pub fn init_root_context() {
     if topo::Env::get::<RefCell<Store>>().is_none() {
-        topo::Env::add(RefCell::new(Store::default()));
+        topo::Env::add(RefCell::new(Store::new()));
     }
 }
 

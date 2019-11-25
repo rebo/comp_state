@@ -5,7 +5,7 @@ use std::collections::HashMap;
 pub use std::collections::HashSet;
 use topo::*;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Store {
     pub id_to_key_map: HashMap<topo::Id, DefaultKey>,
     pub primary_slotmap: SlotMap<DefaultKey, Id>,
@@ -14,6 +14,14 @@ pub struct Store {
 }
 
 impl Store {
+    pub(crate) fn new() -> Store {
+        Store {
+            id_to_key_map: HashMap::new(),
+            primary_slotmap: SlotMap::new(),
+            anymap: anymap::Map::new(),
+            unseen_ids: HashSet::new(),
+        }
+    }
     pub(crate) fn get_state<T: 'static>(&mut self) -> Option<&T> {
         let current_id = topo::Id::current();
 

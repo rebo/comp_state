@@ -15,5 +15,5 @@ edition = "2018"
 topo = { path = "./moxie/topo" }
 once_cell = "1.2.0"
 slotmap = "0.4.0"
-anymap = { git = "https://github.com/chris-morgan/anymap" }
+anymap = "0.12.1"
 enclose = "1.1.8"
