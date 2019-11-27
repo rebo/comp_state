@@ -43,6 +43,45 @@ pub fn use_state<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> (T, StateA
     }
 }
 
+///
+/// use_istate() - create a new internal state.
+///
+/// Constructs a T and T accessor pair. T is stored keyed to in a new topological context.
+/// The accessor always references this context therefore can you can set/update/ or get this T
+/// from anywhere.
+///
+///  If T has already been stored on subsequent revists, T will be a clone of the latest stored T.
+///
+///  As each use_istate() call creates its own context this function can be called any number of
+///  times with the same type.
+///
+/// # Examples
+///
+/// ```
+/// let (my_string, my_string_access) =  use_istate(|| "foo".to_string());
+/// ...
+/// ...
+///  // Maybe in a Callback...
+/// my_string_access.set("bar")
+/// ```
+///
+/// This stores a string "foo" in the current topological context,
+/// which is later set to "bar", in some other part of the program.
+///
+pub fn use_istate<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> (T, StateAccess<T>) {
+    let current_id = topo::call!({ topo::Id::current() });
+
+    // returns a clone of the curent stored type. If the type has not been stored before
+    // set it with the closure passed to use_state.
+    if let Some(stored_data) = get_state_with_topo_id::<T>(current_id) {
+        (stored_data, StateAccess::new(current_id))
+    } else {
+        let data = data_fn();
+        set_state_with_topo_id::<T>(data.clone(), current_id);
+        (data, StateAccess::new(current_id))
+    }
+}
+
 /// sets the state of type T keyed to the local context.
 pub fn set_state<T: 'static + Clone>(data: T) {
     let current_id = topo::Id::current();
