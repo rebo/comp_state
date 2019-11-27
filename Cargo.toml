@@ -2,11 +2,12 @@
 version = "0.0.1"
 name = "comp_state"
 authors = ["rebo <rebotfc@gmail.com>"]
-repository = "n/a"
+repository = "https://github.com/rebo/comp_state"
 description = "Component State - a clone of React Hooks use_state"
 categories = ["react", "component", "use_state"]
 license = "MIT/Apache-2.0"
 readme = "./README.md"
+homepage = "https://github.com/rebo/comp_state"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
