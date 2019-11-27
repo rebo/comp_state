@@ -1,4 +1,4 @@
-# comp_state: Component State for per compoment state
+# comp_state: Component state for topologically execution contexts
 
 comp_state is a crate that allows you to store state on a per component basis.
 It is designed as a clone of React hooks. 
@@ -7,15 +7,12 @@ Here a component is defined as a 'topological aware execution context', this
 means that the component is aware of its own call-site identity and location
 in the call tree.
 
-Each component has its own TopoId which is then used as a key to store component
-state.
-
 comp_state is generally used within the context of a host framework, for instance
 a web frontend compiled to Wasm.
 
 **Example:**
 
-This is a complete counting button with state in the Seed framework:
+This is a complete counting button with state implemented in in the Seed framework:
 
 ```rust
 use comp_state::{topo, use_state};
@@ -65,9 +62,11 @@ The two most important functions/macros are:
 
 **Caveats:**
 
-- This is purely pre-alpha experimental!
+This is purely alpha experimental!
 
-- This makes extensive use of topo which maintains the component identity.
+Each component has its own "topo::Id" which is then used as a key to store component
+state. topo is a crate from the Moxie team who are creating a GUI framework for rust.
+There is an interesting talk about moxie and how topo works [here](https://www.youtube.com/watch?v=tmM756XZt20).
 
 **How does it work?**
 
