@@ -1,4 +1,4 @@
-# comp_state: Component state for topologically execution contexts
+# comp_state: store state on components
 
 comp_state is a crate that allows you to store state on a per component basis.
 It is designed as a clone of React hooks. 
