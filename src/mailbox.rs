@@ -1,8 +1,9 @@
 // experimental setting up mailboxes for components
 
-use crate::{get_state_with_topo_id, set_state_with_topo_id, update_state_with_topo_id, use_state};
+use crate::state_functions::{
+    get_state_with_topo_id, set_state_with_topo_id, update_state_with_topo_id, use_state,
+};
 use std::marker::PhantomData;
-
 #[derive(Clone, Default)]
 pub struct Mailbox<T> {
     pub messages: Vec<(topo::Id, T)>,

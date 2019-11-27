@@ -18,6 +18,8 @@ a web frontend compiled to Wasm.
 This is a complete counting button with state in the Seed framework:
 
 ```rust
+use comp_state::{topo, use_state};
+
 fn hook_style_button() -> Node<Msg> {
     topo::call({
         // Declare a new state variable which we'll call "count"
@@ -52,39 +54,32 @@ function Example() {
 }
 ```
 
-The four most important functions/macros are:
+The two most important functions/macros are:
  
-* init_root_context() - This needs to be called prior to topo::root! in the 
-  application initialisation. It sets up the storage in the root component context.
 * use_state(|| .. ) stores component state for the type returned by the closure. 
   Returns a (state, accessor) tuple. 
-* topo::root!({}) This macro defines the root of the topological components. 
-  Usually called at the start of a render loop.
 * topo::call!({}) This macro definies the extent of a component. Everything 
-  inside the call! will have its own unique topological id.
+  inside the call! will have its own unique topological id. The outermost call!
+  acts as a "root" which resets the topology and enables specific components to have
+  a "topological identity".
 
 **Caveats:**
 
 - This is purely pre-alpha experimental!
 
-- this 100% uses topo code from Moxie (https://github.com/anp/moxie), cut and 
-pasted into this example because the latest version of topo was not published 
-as a separate crate. 
-
--  The core technology (topo) is 100% created by and the idea of the Moxie team, 
-I have nothing to do with them and just wanted to get topo working with seed.
+- This makes extensive use of topo which maintains the component identity.
 
 **How does it work?**
 
-- topo creates a new execution context for every `topo::call!` block. Further calls 
-to `topo::root!` re-roots the execution context. The re-rooting allows for consistent 
+- topo creates a new execution context for every `topo::call!` block. The outermost call
+re-roots the execution context. The re-rooting allows for consistent 
 execution contexts for the same components as long as you re-root at the start of the 
 base view function. This means that one can store and retrieve local data for an 
 individual component which has been enclosed with  `topo::call!`.
 
 - The execution context is not only determined by the order of calling `topo::call!` 
 functions but also the source location of these calls. This means that state is 
-consistent  and stable even though branching logic might call topologically 
+consistent and stable even though branching logic might call topologically 
 aware functions in different orders.
 
 - See this awesome talk explaining how topo works: https://www.youtube.com/watch?v=tmM756XZt20
