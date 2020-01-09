@@ -67,13 +67,13 @@ pub fn use_state<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> (T, StateA
 ///
 /// This stores a string "foo" in the current topological context,
 /// which is later set to "bar", in some other part of the program.
-///
+#[topo::nested]
 pub fn use_istate<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> (T, StateAccess<T>) {
-    let current_id = topo::call!({ topo::Id::current() });
+    let current_id = topo::Id::current();
 
     // returns a clone of the curent stored type. If the type has not been stored before
     // set it with the closure passed to use_state.
-    if let Some(stored_data) = get_state_with_topo_id::<T>(current_id) {
+    if let Some(stored_data) = clone_state::<T>() {
         (stored_data, StateAccess::new(current_id))
     } else {
         let data = data_fn();

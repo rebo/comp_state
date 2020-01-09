@@ -8,7 +8,7 @@ use crate::state_functions::use_state;
 ///     println!("This will print only once");
 /// });
 pub fn do_once<F: Fn() -> ()>(func: F) {
-    topo::call!({
+    topo::call(|| {
         let (has_done, has_done_access) = use_state(|| false);
         if !has_done {
             func();

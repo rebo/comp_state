@@ -25,7 +25,7 @@ impl MemoControl {
 /// ```
 
 pub fn watch<T: 'static + Clone + PartialEq>(current_watched: &T) -> bool {
-    topo::call!({
+    topo::call(|| {
         let (watched, watch_access) = use_state(e!((current_watched) || current_watched));
         if &watched != current_watched {
             watch_access.set(current_watched.clone());
@@ -52,22 +52,21 @@ pub fn watch<T: 'static + Clone + PartialEq>(current_watched: &T) -> bool {
 ///     || expensive_render(list)
 /// )
 /// ```
+#[topo::nested]
 pub fn use_memo<T: 'static + Clone, F: Fn() -> T>(recalc: bool, func: F) -> (T, MemoControl) {
-    topo::call!({
-        let (update, recalc_trigger_access) = use_state(|| false);
+    let (update, recalc_trigger_access) = use_state(|| false);
 
-        let new_func = || func();
+    let new_func = || func();
 
-        // by definition this will keep returning 'value'
-        // until update is set to true.
+    // by definition this will keep returning 'value'
+    // until update is set to true.
 
-        let (mut value, value_access) = use_state(new_func);
+    let (mut value, value_access) = use_state(new_func);
 
-        if update || recalc {
-            value = func();
-            value_access.set(value.clone());
-            recalc_trigger_access.set(false);
-        }
-        (value, MemoControl(recalc_trigger_access))
-    })
+    if update || recalc {
+        value = func();
+        value_access.set(value.clone());
+        recalc_trigger_access.set(false);
+    }
+    (value, MemoControl(recalc_trigger_access))
 }
