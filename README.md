@@ -1,7 +1,7 @@
 # comp_state: store state on components
 
 comp_state is a crate that allows you to store state on a per component basis.
-It is designed as a clone of React hooks. 
+It is designed as a clone of React Hooks, principally the useState hook.
 
 Here a component is defined as a 'topological aware execution context', this 
 means that the component is aware of its own call-site identity and location
@@ -17,18 +17,17 @@ This is a complete counting button with state implemented in in the Seed framewo
 ```rust
 use comp_state::{topo, use_state};
 
+#[topo::nested]
 fn hook_style_button() -> Node<Msg> {
-    topo::call({
-        // Declare a new state variable which we'll call "count"
-        let (count, count_access) = use_state(|| 0);
-        div![
-            p![format!("You clicked {} times", count)],
-            button![
-                on_click( move |_| count_access.set(count + 1)),
-                format!("Click Me × {}", count)
-            ]
-        ]
-    })
+  // Declare a new state variable which we'll call "count"
+  let (count, count_access) = use_state(|| 0);
+  div![
+      p![format!("You clicked {} times", count)],
+      button![
+          on_click( move |_| count_access.set(count + 1)),
+          format!("Click Me × {}", count)
+      ]
+  ]
 }
 ```
 
@@ -51,12 +50,12 @@ function Example() {
 }
 ```
 
-The two most important functions/macros are:
+The two most important functions are:
  
 * use_state(|| .. ) stores component state for the type returned by the closure. 
   Returns a (state, accessor) tuple. 
-* topo::call!({}) This macro definies the extent of a component. Everything 
-  inside the call! will have its own unique topological id. The outermost call!
+* `#[topo::nested]` function annotation definies the a topologically aware function. Everything 
+  executed within the function will have its own unique topological id. The outermost nested function
   acts as a "root" which resets the topology and enables specific components to have
   a "topological identity".
 
@@ -70,13 +69,15 @@ There is an interesting talk about moxie and how topo works [here](https://www.y
 
 **How does it work?**
 
-- topo creates a new execution context for every `topo::call!` block. The outermost call
+- this relies on the `#![feature(track_caller)]` feature gate to be activated.
+
+- topo creates a new execution context for every `#[topo::nested]` function or every `topo::call` block. The outermost call
 re-roots the execution context. The re-rooting allows for consistent 
 execution contexts for the same components as long as you re-root at the start of the 
 base view function. This means that one can store and retrieve local data for an 
-individual component which has been enclosed with  `topo::call!`.
+individual component annotated by `#[topo::nested]`.
 
-- The execution context is not only determined by the order of calling `topo::call!` 
+- The execution context is not only determined by the order of calling a  
 functions but also the source location of these calls. This means that state is 
 consistent and stable even though branching logic might call topologically 
 aware functions in different orders.
@@ -95,7 +96,9 @@ where it is called.
 - currently comp_state only exposes a clone to stored values. 
 
 - currently only 1 type per context is storable, however if you want to store more than 1 
-String say, you can create a `HashMap<key,String>` , `Vec`, or NewType and store that.
+String say, you can create a `HashMap<key,String>` , `Vec`, or NewType and store that. Alternatively
+ you can call `use_istate` instead of `use_state`. `use_istate` uses an inner topology to store the new
+ variable's state..
 
 - After some testing this now seems fairly stable-ish. This is experimental please 
 don't rely on it for anything important.
