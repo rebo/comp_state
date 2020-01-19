@@ -1,5 +1,5 @@
 [package]
-version = "0.0.8"
+version = "0.0.9"
 name = "comp_state"
 authors = ["rebo <rebotfc@gmail.com>"]
 repository = "https://github.com/rebo/comp_state"
