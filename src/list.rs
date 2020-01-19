@@ -229,7 +229,7 @@ where
 {
     pub items_map: ListKeyDenseSlotMap<T>,
     pub items_order: Vec<ListKey>,
-    selected_keys: Vec<ListKey>,
+    pub selected_keys: Vec<ListKey>,
 }
 
 impl<T> PartialEq for ListKeyDenseSlotMap<T>
