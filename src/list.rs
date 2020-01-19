@@ -214,7 +214,7 @@ where
 }
 
 #[derive(Clone, Default)]
-pub struct ListKeyDenseSlotMap<T>(DenseSlotMap<ListKey, T>);
+pub struct ListKeyDenseSlotMap<T>(pub DenseSlotMap<ListKey, T>);
 
 impl<T> ListKeyDenseSlotMap<T> {
     pub fn new() -> ListKeyDenseSlotMap<T> {
