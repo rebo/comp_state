@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 ///  Accessor struct that provides access to getting and setting the
 ///  state of the stored type
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct StateAccess<T> {
     pub id: topo::Id,
     _phantom_data: PhantomData<T>,
