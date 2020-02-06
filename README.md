@@ -20,11 +20,11 @@ use comp_state::{topo, use_state};
 #[topo::nested]
 fn hook_style_button() -> Node<Msg> {
   // Declare a new state variable which we'll call "count"
-  let (count, count_access) = use_state(|| 0);
+  let count_access = use_state(|| 0);
   div![
-      p![format!("You clicked {} times", count)],
+      p![format!("You clicked {} times", count_access.get())],
       button![
-          on_click( move |_| count_access.set(count + 1)),
+          on_click( move |_| count_access.update(|count| count += 1)),
           format!("Click Me × {}", count)
       ]
   ]
@@ -53,7 +53,7 @@ function Example() {
 The two most important functions are:
  
 * use_state(|| .. ) stores component state for the type returned by the closure. 
-  Returns a (state, accessor) tuple. 
+  Returns a state accessor. 
 * `#[topo::nested]` function annotation definies the a topologically aware function. Everything 
   executed within the function will have its own unique topological id. The outermost nested function
   acts as a "root" which resets the topology and enables specific components to have
@@ -84,16 +84,15 @@ aware functions in different orders.
 
 - See this awesome talk explaining how topo works: https://www.youtube.com/watch?v=tmM756XZt20
 
-- a type gets stored with : `let (my_string, string_access) = use_state::<String>(||text)` 
-which stores `text` in the component for the `String` type. This returns a tuple,
- with `my_string` being a clone of the latest state and string_access being an accessor 
- which can get or set this value. 
+- a type gets stored with : `let string  = use_state::<String>(||text)` 
+which stores `text` in the component for the `String` type. This returns a 
+ state accessor struct respomsible for getting and setting of the state.
 
 - The accessor is useful because it can be passed to callbacks or cloned or called from 
 different topological contexts. i.e. `string_acces.set(new_text)` will work no matter 
 where it is called.
 
-- currently comp_state only exposes a clone to stored values. 
+- currently comp_state  exposes a clone to stored values via `get()` and to non-Clone types with `get_with()`
 
 - currently only 1 type per context is storable, however if you want to store more than 1 
 String say, you can create a `HashMap<key,String>` , `Vec`, or NewType and store that. Alternatively

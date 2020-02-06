@@ -1,3 +1,4 @@
+use crate::state_access::CloneState;
 use crate::state_access::StateAccess;
 use crate::store::Store;
 use std::cell::RefCell;
@@ -8,84 +9,56 @@ thread_local! {
 }
 
 ///
-/// Constructs a T and T accessor pair. T is stored keyed to the current topological context.
+/// Constructs a T accessor. T is stored keyed to the current topological context.
 /// The accessor always references this context therefore can you can set/update/ or get this T
 /// from anywhere.
 ///
-///  If T has already been stored on subsequent revists, T will be a clone of the latest stored T.
-///
+///  The passed closure is only used for the first initialisation of state.
+///  Subsequent evaluations of this function just returns the accessor.
 ///  Only one type per context can be stored in this way.
 ///
 /// # Examples
 ///
 /// ```
-/// let (my_string, my_string_access) =  use_state(|| "foo".to_string());
+/// let my_string =  use_state(|| "foo".to_string());
 /// ...
 /// ...
 ///  // Maybe in a Callback...
-/// my_string_access.set("bar")
+/// my_string.set("bar")
 /// ```
 ///
 /// This stores a string "foo" in the current topological context,
 /// which is later set to "bar", in some other part of the program.
 ///
-pub fn use_state<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> (T, StateAccess<T>) {
+/// You can store Clone or non-Clone types. Altbough non-Clone types need
+/// to be read via their excessor in a more restrictive way.
+pub fn use_state<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     let current_id = topo::Id::current();
-
-    // returns a clone of the curent stored type. If the type has not been stored before
-    // set it with the closure passed to use_state.
-    if let Some(stored_data) = clone_state::<T>() {
-        (stored_data, StateAccess::new(current_id))
-    } else {
-        let data = data_fn();
-        set_state_with_topo_id::<T>(data.clone(), current_id);
-        (data, StateAccess::new(current_id))
+    if !state_exists_for_topo_id::<T>(current_id) {
+        set_state_with_topo_id::<T>(data_fn(), current_id);
     }
+
+    StateAccess::new(current_id)
 }
 
 ///
 /// use_istate() - create a new internal state.
 ///
-/// Constructs a T and T accessor pair. T is stored keyed to in a new topological context.
-/// The accessor always references this context therefore can you can set/update/ or get this T
-/// from anywhere.
-///
-///  If T has already been stored on subsequent revists, T will be a clone of the latest stored T.
-///
-///  As each use_istate() call creates its own context this function can be called any number of
-///  times with the same type.
-///
-/// # Examples
-///
-/// ```
-/// let (my_string, my_string_access) =  use_istate(|| "foo".to_string());
-/// ...
-/// ...
-///  // Maybe in a Callback...
-/// my_string_access.set("bar")
-/// ```
-///
-/// This stores a string "foo" in the current topological context,
-/// which is later set to "bar", in some other part of the program.
+// exactly like use_state but it is its own context. Useful if more than one type needs to be stored
+// in a parent context.
 #[topo::nested]
-pub fn use_istate<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> (T, StateAccess<T>) {
-    let current_id = topo::Id::current();
-
-    // returns a clone of the curent stored type. If the type has not been stored before
-    // set it with the closure passed to use_state.
-    if let Some(stored_data) = clone_state::<T>() {
-        (stored_data, StateAccess::new(current_id))
-    } else {
-        let data = data_fn();
-        set_state_with_topo_id::<T>(data.clone(), current_id);
-        (data, StateAccess::new(current_id))
-    }
+pub fn use_istate<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
+    use_state(data_fn)
+}
+#[topo::nested]
+pub fn use_lstate<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
+    let count = use_state(|| 0);
+    count.update(|c| *c += 1);
+    topo::call_in_slot(count.get(), || use_state(data_fn))
 }
 
-/// sets the state of type T keyed to the local context.
-pub fn set_state<T: 'static + Clone>(data: T) {
-    let current_id = topo::Id::current();
-
+/// Sets the state of type T keyed to the given TopoId
+pub fn set_state_with_topo_id<T: 'static>(data: T, current_id: topo::Id) {
     STORE.with(|store_refcell| {
         store_refcell
             .borrow_mut()
@@ -93,22 +66,30 @@ pub fn set_state<T: 'static + Clone>(data: T) {
     })
 }
 
-/// Sets the state of type T keyed to the given TopoId
-pub fn set_state_with_topo_id<T: 'static + Clone>(data: T, current_id: topo::Id) {
+pub fn state_exists_for_topo_id<T: 'static>(id: topo::Id) -> bool {
     STORE.with(|store_refcell| {
         store_refcell
             .borrow_mut()
-            .set_state_with_topo_id::<T>(data, current_id)
+            .get_state_with_topo_id::<T>(id)
+            .is_some()
     })
 }
 
 /// Clones the state of type T keyed to the given TopoId
-pub fn get_state_with_topo_id<T: 'static + Clone>(id: topo::Id) -> Option<T> {
+pub fn clone_state_with_topo_id<T: 'static + Clone>(id: topo::Id) -> Option<T> {
     STORE.with(|store_refcell| {
         store_refcell
             .borrow_mut()
             .get_state_with_topo_id::<T>(id)
             .cloned()
+    })
+}
+
+pub fn remove_state_with_topo_id<T: 'static>(id: topo::Id) -> Option<T> {
+    STORE.with(|store_refcell| {
+        store_refcell
+            .borrow_mut()
+            .remove_state_with_topo_id::<T>(id)
     })
 }
 
@@ -121,19 +102,19 @@ pub fn get_state_with_topo_id<T: 'static + Clone>(id: topo::Id) -> Option<T> {
 ///     v.push("foo".to_string()
 /// )
 ///
-pub fn update_state_with_topo_id<T: Clone + 'static, F: FnOnce(&mut T) -> ()>(
-    id: topo::Id,
-    func: F,
-) {
-    let item = &mut get_state_with_topo_id::<T>(id)
+pub fn update_state_with_topo_id<T: 'static, F: FnOnce(&mut T) -> ()>(id: topo::Id, func: F) {
+    let mut item = remove_state_with_topo_id::<T>(id)
         .expect("You are trying to update a type state that doesnt exist in this context!");
-    func(item);
-    set_state_with_topo_id(item.clone(), id);
+    func(&mut item);
+    set_state_with_topo_id(item, id);
 }
 
-/// Clones the state of a type keyed to the current topological context
-pub fn clone_state<T: 'static + Clone>() -> Option<T> {
-    STORE.with(|store_refcell| store_refcell.borrow_mut().get_state::<T>().cloned())
+pub fn read_state_with_topo_id<T: 'static, F: FnOnce(&T) -> R, R>(id: topo::Id, func: F) -> R {
+    let item = remove_state_with_topo_id::<T>(id)
+        .expect("You are trying to read a type state that doesnt exist in this context!");
+    let read = func(&item);
+    set_state_with_topo_id(item, id);
+    read
 }
 
 /// Rudamentary Garbage Collection

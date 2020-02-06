@@ -1,4 +1,4 @@
-use crate::state_access::StateAccess;
+use crate::state_access::{CloneState, StateAccess};
 use crate::state_functions::use_state;
 use slotmap::{new_key_type, DenseSlotMap, Key};
 
@@ -6,14 +6,14 @@ new_key_type! {
     pub struct ListKey;
 }
 
-pub fn use_list<T, F>(initial_list_fn: F) -> (List<T>, ListControl<T>)
+pub fn use_list<T, F>(initial_list_fn: F) -> ListControl<T>
 where
     F: FnOnce() -> Vec<T>,
     T: Clone,
 {
-    let (list, list_access) = use_state(|| List::new(initial_list_fn()));
+    let list_access = use_state(|| List::new(initial_list_fn()));
 
-    (list, ListControl::new(list_access))
+    ListControl::new(list_access)
 }
 
 #[derive(Clone)]
@@ -33,7 +33,7 @@ where
     }
 
     pub fn get_list(&self) -> List<T> {
-        self.list_access.get().unwrap()
+        self.list_access.get()
     }
 
     pub fn clear(&self) {
@@ -73,7 +73,7 @@ where
     // 0 1 2 3 4 5 6
     // a b d e f g
     pub fn move_item_to_position(&self, old_idx: usize, new_idx: usize) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         if new_idx > list.items_order.len() || old_idx > list.items_order.len() - 1 {
             return;
         }
@@ -100,14 +100,14 @@ where
     }
 
     pub fn insert(&self, idx: usize, item: T) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         let inserted_key = list.items_map.0.insert(item);
         list.items_order.insert(idx, inserted_key);
         self.list_access.set(list);
     }
 
     pub fn remove(&self, idx: usize) -> T {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         let removed_key = list.items_order.remove(idx);
         let obj = list.items_map.0.remove(removed_key).unwrap();
         self.list_access.set(list);
@@ -115,7 +115,7 @@ where
     }
 
     pub fn replace(&self, idx: usize, item: T) -> T {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         let inserted_key = list.items_map.0.insert(item);
         list.items_order.insert(idx, inserted_key);
         let replaced_key = list.items_order.remove(idx + 1);
@@ -125,14 +125,14 @@ where
     }
 
     pub fn push(&self, item: T) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         let pushed_key = list.items_map.0.insert(item);
         list.items_order.push(pushed_key);
         self.list_access.set(list);
     }
 
     pub fn unselect_by_key(&self, key: ListKey) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
 
         list.selected_keys.retain(|k| *k != key);
 
@@ -140,13 +140,13 @@ where
     }
 
     pub fn unselect_all(&self) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         list.selected_keys = vec![];
         self.list_access.set(list);
     }
 
     pub fn select_all(&self) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         for key in &list.items_order {
             list.selected_keys.push(*key)
         }
@@ -155,14 +155,14 @@ where
     }
 
     pub fn unselect(&self, idx: usize) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
 
         list.selected_keys.remove(idx);
 
         self.list_access.set(list);
     }
     pub fn select(&self, idx: usize) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
 
         let key = list.items_order[idx];
         list.selected_keys.push(key);
@@ -171,7 +171,7 @@ where
     }
 
     pub fn toggle_select(&self, idx: usize) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
 
         let key = list.items_order[idx];
         if list.selected_keys.contains(&key) {
@@ -184,7 +184,7 @@ where
     }
 
     pub fn select_only(&self, idx: usize) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
 
         let key = list.items_order[idx];
         list.selected_keys = vec![];
@@ -194,7 +194,7 @@ where
     }
 
     pub fn select_only_by_key(&self, key: ListKey) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
         if !key.is_null() {
             list.selected_keys = vec![];
             list.selected_keys.push(key);
@@ -203,7 +203,7 @@ where
     }
 
     pub fn select_by_key(&self, key: ListKey) {
-        let mut list = self.list_access.get().unwrap();
+        let mut list = self.list_access.get();
 
         if !key.is_null() {
             list.selected_keys.push(key);

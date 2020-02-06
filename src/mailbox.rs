@@ -1,7 +1,7 @@
 // experimental setting up mailboxes for components
 
 use crate::state_functions::{
-    get_state_with_topo_id, set_state_with_topo_id, update_state_with_topo_id, use_state,
+    clone_state_with_topo_id, set_state_with_topo_id, update_state_with_topo_id, use_state,
 };
 use std::marker::PhantomData;
 #[derive(Clone, Default)]
@@ -41,7 +41,7 @@ where
     }
 
     pub fn pop(&self) -> Option<(topo::Id, T)> {
-        if let Some(mut mailbox) = get_state_with_topo_id::<Mailbox<T>>(self.id) {
+        if let Some(mut mailbox) = clone_state_with_topo_id::<Mailbox<T>>(self.id) {
             if let Some(msg) = mailbox.messages.pop() {
                 set_state_with_topo_id(mailbox, self.id);
                 Some(msg)
@@ -54,10 +54,8 @@ where
     }
 }
 
-pub fn use_mailbox<T: Clone>() -> (Mailbox<T>, MailboxControl<T>) {
-    let (mailbox, _mailbox_access) = use_state(Mailbox::<T>::new);
+pub fn use_mailbox<T: Clone>() -> MailboxControl<T> {
+    use_state(Mailbox::<T>::new);
 
-    let ctrl = MailboxControl::new(topo::Id::current());
-
-    (mailbox, ctrl)
+    MailboxControl::new(topo::Id::current())
 }

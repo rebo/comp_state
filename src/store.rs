@@ -22,11 +22,6 @@ impl Store {
             unseen_ids: HashSet::new(),
         }
     }
-    pub(crate) fn get_state<T: 'static>(&mut self) -> Option<&T> {
-        let current_id = topo::Id::current();
-
-        self.get_state_with_topo_id(current_id)
-    }
 
     pub(crate) fn get_state_with_topo_id<T: 'static>(
         &mut self,
@@ -41,6 +36,28 @@ impl Store {
                 existing_secondary_map.get(*existing_key)
             }
             (_, _) => None,
+        }
+    }
+
+    pub(crate) fn remove_state_with_topo_id<T: 'static>(
+        &mut self,
+        current_id: topo::Id,
+    ) -> Option<T> {
+        // /self.unseen_ids.remove(&current_id);
+
+        //unwrap or default to keep borrow checker happy
+        let key = self
+            .id_to_key_map
+            .get(&current_id)
+            .copied()
+            .unwrap_or_default();
+
+        if key.is_null() {
+            None
+        } else if let Some(existing_secondary_map) = self.get_mut_secondarymap::<T>() {
+            existing_secondary_map.remove(key)
+        } else {
+            None
         }
     }
 
