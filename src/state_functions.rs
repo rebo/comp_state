@@ -32,7 +32,17 @@ thread_local! {
 ///
 /// You can store Clone or non-Clone types. Altbough non-Clone types need
 /// to be read via their excessor in a more restrictive way.
-pub fn use_state<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
+// in a parent context.
+#[topo::nested]
+pub fn use_state<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
+    use_state_current(data_fn)
+}
+
+///
+///  Uses the current topological id to create a new state accessor
+///
+///
+pub fn use_state_current<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     let current_id = topo::Id::current();
     if !state_exists_for_topo_id::<T>(current_id) {
         set_state_with_topo_id::<T>(data_fn(), current_id);
@@ -41,20 +51,11 @@ pub fn use_state<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     StateAccess::new(current_id)
 }
 
-///
-/// use_istate() - create a new internal state.
-///
-// exactly like use_state but it is its own context. Useful if more than one type needs to be stored
-// in a parent context.
 #[topo::nested]
-pub fn use_istate<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
-    use_state(data_fn)
-}
-#[topo::nested]
-pub fn use_lstate<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
+pub fn use_state_unique<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     let count = use_state(|| 0);
     count.update(|c| *c += 1);
-    topo::call_in_slot(count.get(), || use_state(data_fn))
+    topo::call_in_slot(count.get(), || use_state_current(data_fn))
 }
 
 /// Sets the state of type T keyed to the given TopoId
