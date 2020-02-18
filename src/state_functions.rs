@@ -34,7 +34,7 @@ thread_local! {
 /// to be read via their excessor in a more restrictive way.
 // in a parent context.
 #[topo::nested]
-pub fn use_state<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
+pub fn use_state<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     use_state_current(data_fn)
 }
 
