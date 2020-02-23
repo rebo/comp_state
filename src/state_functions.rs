@@ -161,6 +161,13 @@ fn purge_unseen_ids() {
     })
 }
 
+pub fn unseen_ids() -> Vec<topo::Id> {
+    STORE.with(|store_refcell| {
+        let store_mut = store_refcell.borrow_mut();
+        store_mut.unseen_ids.iter().cloned().collect::<Vec<_>>()
+    })
+}
+
 // pub fn state_getter<T: 'static + Clone>() -> Arc<dyn Fn() -> Option<T>> {
 //     let current_id = topo::Id::current();
 //     Arc::new(move || get_state_with_topo_id::<T>(current_id))
