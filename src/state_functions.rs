@@ -1,3 +1,4 @@
+use crate::drop_type::{DropType, StateAccessDropType};
 use crate::state_access::CloneState;
 use crate::state_access::StateAccess;
 use crate::store::Store;
@@ -30,13 +31,67 @@ thread_local! {
 /// This stores a string "foo" in the current topological context,
 /// which is later set to "bar", in some other part of the program.
 ///
-/// You can store Clone or non-Clone types. Altbough non-Clone types need
-/// to be read via their excessor in a more restrictive way.
+/// You can store Clone or non-Clone types. Although non-Clone types need
+/// to be read via their accessor in a more restrictive way.
 // in a parent context.
 #[topo::nested]
 pub fn use_state<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     use_state_current(data_fn)
 }
+
+#[topo::nested]
+pub fn use_5_states<
+    T1: 'static,
+    T2: 'static,
+    T3: 'static,
+    T4: 'static,
+    T5: 'static,
+    F: FnOnce() -> (T1, T2, T3, T4, T5),
+>(
+    data_fn: F,
+) -> (
+    StateAccess<T1>,
+    StateAccess<T2>,
+    StateAccess<T3>,
+    StateAccess<T4>,
+    StateAccess<T5>,
+) {
+    let current_id = topo::Id::current();
+
+    if !state_exists_for_topo_id::<T1>(current_id) {
+        let (data_1, data_2, data_3, data_4, data_5) = data_fn();
+        set_state_with_topo_id::<T1>(data_1, current_id);
+        set_state_with_topo_id::<T2>(data_2, current_id);
+        set_state_with_topo_id::<T3>(data_3, current_id);
+        set_state_with_topo_id::<T4>(data_4, current_id);
+        set_state_with_topo_id::<T5>(data_5, current_id);
+    }
+
+    (
+        StateAccess::new(current_id),
+        (StateAccess::new(current_id)),
+        StateAccess::new(current_id),
+        (StateAccess::new(current_id)),
+        StateAccess::new(current_id),
+    )
+}
+
+#[topo::nested]
+pub fn use_2_states<T1: 'static, T2: 'static, F: FnOnce() -> (T1, T2)>(
+    data_fn: F,
+) -> (StateAccess<T1>, StateAccess<T2>) {
+    let current_id = topo::Id::current();
+
+    if !state_exists_for_topo_id::<T1>(current_id) {
+        let (data_1, data_2) = data_fn();
+        set_state_with_topo_id::<T1>(data_1, current_id);
+        set_state_with_topo_id::<T2>(data_2, current_id);
+    }
+
+    (StateAccess::new(current_id), (StateAccess::new(current_id)))
+}
+
+///
 
 ///
 ///  Uses the current topological id to create a new state accessor
@@ -47,12 +102,12 @@ pub fn use_state_current<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAcces
     if !state_exists_for_topo_id::<T>(current_id) {
         set_state_with_topo_id::<T>(data_fn(), current_id);
     }
-
+    mark_id_as_active(current_id);
     StateAccess::new(current_id)
 }
 
 #[topo::nested]
-pub fn use_state_unique<T: 'static + Clone, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
+pub fn new_state<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     let count = use_state(|| 0);
     count.update(|c| *c += 1);
     topo::call_in_slot(count.get(), || use_state_current(data_fn))
@@ -68,12 +123,11 @@ pub fn set_state_with_topo_id<T: 'static>(data: T, current_id: topo::Id) {
 }
 
 pub fn state_exists_for_topo_id<T: 'static>(id: topo::Id) -> bool {
-    STORE.with(|store_refcell| {
-        store_refcell
-            .borrow_mut()
-            .get_state_with_topo_id::<T>(id)
-            .is_some()
-    })
+    STORE.with(|store_refcell| store_refcell.borrow().state_exists_with_topo_id::<T>(id))
+}
+
+pub fn mark_id_as_active(id: topo::Id) {
+    STORE.with(|store_refcell| store_refcell.borrow_mut().mark_id_as_active(id))
 }
 
 /// Clones the state of type T keyed to the given TopoId
@@ -172,3 +226,17 @@ pub fn unseen_ids() -> Vec<topo::Id> {
 //     let current_id = topo::Id::current();
 //     Arc::new(move || get_state_with_topo_id::<T>(current_id))
 // }
+
+pub fn execute_and_remove_drop_types() {
+    for id in unseen_ids() {
+        if state_exists_for_topo_id::<DropType>(id) {
+            read_state_with_topo_id::<DropType, _, _>(id, |dt| dt.execute_if_activated());
+            remove_state_with_topo_id::<DropType>(id);
+        }
+    }
+}
+
+#[topo::nested]
+pub fn use_drop_type<F: Fn() -> () + 'static>(drop_fn: F) -> StateAccess<DropType> {
+    use_state(|| DropType::new(drop_fn))
+}

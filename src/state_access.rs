@@ -4,13 +4,13 @@ use std::marker::PhantomData;
 ///  Accessor struct that provides access to getting and setting the
 ///  state of the stored type
 ///
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct StateAccess<T> {
     pub id: topo::Id,
     _phantom_data: PhantomData<T>,
 }
 
-impl<T> std::fmt::Display for StateAccess<T> {
+impl<T> std::fmt::Debug for StateAccess<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({:#?})", self.id)
     }
@@ -44,6 +44,15 @@ where
 
     pub fn remove(self) -> Option<T> {
         remove_state_with_topo_id(self.id)
+    }
+
+    pub fn delete(self) {
+        self.remove();
+    }
+
+    pub fn reset_on_drop(self) -> Self {
+        use_drop_type(move || self.delete());
+        self
     }
 
     /// updates the stored state in place
@@ -102,5 +111,27 @@ where
             set_state_with_topo_id(ChangedWrapper(self.get()), self.id);
             true
         }
+    }
+}
+
+impl<T> std::fmt::Display for StateAccess<T>
+where
+    T: std::fmt::Display + 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.get_with(|t| format!("{}", t)))
+    }
+}
+
+use std::ops::Add;
+
+impl<T> Add for StateAccess<T>
+where
+    T: Copy + Add<Output = T> + 'static,
+{
+    type Output = T;
+
+    fn add(self, other: Self) -> Self::Output {
+        self.get_with(|s| other.get_with(|o| *o + *s))
     }
 }

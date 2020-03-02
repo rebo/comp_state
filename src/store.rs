@@ -23,6 +23,15 @@ impl Store {
         }
     }
 
+    pub(crate) fn state_exists_with_topo_id<T: 'static>(&self, id: topo::Id) -> bool {
+        match (self.id_to_key_map.get(&id), self.get_secondarymap::<T>()) {
+            (Some(existing_key), Some(existing_secondary_map)) => {
+                existing_secondary_map.contains_key(*existing_key)
+            }
+            (_, _) => false,
+        }
+    }
+
     pub(crate) fn get_state_with_topo_id<T: 'static>(
         &mut self,
         current_id: topo::Id,
@@ -37,6 +46,10 @@ impl Store {
             }
             (_, _) => None,
         }
+    }
+
+    pub fn mark_id_as_active(&mut self, id: topo::Id) {
+        self.unseen_ids.remove(&id);
     }
 
     pub(crate) fn remove_state_with_topo_id<T: 'static>(

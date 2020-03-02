@@ -1,4 +1,5 @@
 #![feature(track_caller)]
+pub mod drop_type;
 pub mod list;
 pub mod mailbox;
 pub mod memo;
