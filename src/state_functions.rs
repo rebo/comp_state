@@ -39,58 +39,6 @@ pub fn use_state<T: 'static, F: FnOnce() -> T>(data_fn: F) -> StateAccess<T> {
     use_state_current(data_fn)
 }
 
-#[topo::nested]
-pub fn use_5_states<
-    T1: 'static,
-    T2: 'static,
-    T3: 'static,
-    T4: 'static,
-    T5: 'static,
-    F: FnOnce() -> (T1, T2, T3, T4, T5),
->(
-    data_fn: F,
-) -> (
-    StateAccess<T1>,
-    StateAccess<T2>,
-    StateAccess<T3>,
-    StateAccess<T4>,
-    StateAccess<T5>,
-) {
-    let current_id = topo::Id::current();
-
-    if !state_exists_for_topo_id::<T1>(current_id) {
-        let (data_1, data_2, data_3, data_4, data_5) = data_fn();
-        set_state_with_topo_id::<T1>(data_1, current_id);
-        set_state_with_topo_id::<T2>(data_2, current_id);
-        set_state_with_topo_id::<T3>(data_3, current_id);
-        set_state_with_topo_id::<T4>(data_4, current_id);
-        set_state_with_topo_id::<T5>(data_5, current_id);
-    }
-
-    (
-        StateAccess::new(current_id),
-        (StateAccess::new(current_id)),
-        StateAccess::new(current_id),
-        (StateAccess::new(current_id)),
-        StateAccess::new(current_id),
-    )
-}
-
-#[topo::nested]
-pub fn use_2_states<T1: 'static, T2: 'static, F: FnOnce() -> (T1, T2)>(
-    data_fn: F,
-) -> (StateAccess<T1>, StateAccess<T2>) {
-    let current_id = topo::Id::current();
-
-    if !state_exists_for_topo_id::<T1>(current_id) {
-        let (data_1, data_2) = data_fn();
-        set_state_with_topo_id::<T1>(data_1, current_id);
-        set_state_with_topo_id::<T2>(data_2, current_id);
-    }
-
-    (StateAccess::new(current_id), (StateAccess::new(current_id)))
-}
-
 ///
 
 ///
