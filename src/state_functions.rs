@@ -1,4 +1,4 @@
-use crate::drop_type::{DropType, StateAccessDropType};
+use crate::drop_type::DropType;
 use crate::state_access::CloneState;
 use crate::state_access::StateAccess;
 use crate::store::Store;

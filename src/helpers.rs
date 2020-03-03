@@ -1,6 +1,5 @@
-use crate::drop_type::DropType;
 use crate::state_access::{CloneState, StateAccess};
-use crate::state_functions::{use_drop_type, use_state};
+use crate::state_functions::use_state;
 
 /// call the provided function once and once only
 /// returns a droptype which will allow the do_once

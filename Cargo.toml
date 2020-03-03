@@ -1,5 +1,5 @@
 [package]
-version = "0.2.3"
+version = "0.2.4"
 name = "comp_state"
 authors = ["rebo <rebotfc@gmail.com>"]
 repository = "https://github.com/rebo/comp_state"
@@ -16,4 +16,4 @@ edition = "2018"
 topo = "=0.9.4"
 slotmap = "0.4.0"
 anymap = "0.12.1"
-enclose = "1.1.8"
+
