@@ -1,13 +1,13 @@
-# comp-state: store state on components
+# comp_state: store state on components
 
-comp-state is a crate that allows you to store state on a per component basis.
+comp_state is a crate that allows you to store state on a per component basis.
 It is designed as a clone of React Hooks, principally the useState hook.
 
 Here a component is defined as a 'topological aware execution context', this 
 means that the component is aware of its own call-site identity and location
 in the call tree.
 
-comp-state is generally used within the context of a host framework, for instance
+comp_state is generally used within the context of a host framework, for instance
 a web frontend compiled to Wasm.
 
 **Example:**
@@ -89,7 +89,7 @@ which stores `text` in the component for the `String` type. This returns a
 different topological contexts. i.e. `string_acces.set(new_text)` will work no matter 
 where it is called.
 
-- currently comp-state exposes a clone to stored values via `get()` and to non-Clone types with `get_with()`
+- currently comp_state exposes a clone to stored values via `get()` and to non-Clone types with `get_with()`
 
 - After some testing this now seems fairly stable-ish. This is experimental please 
 don't rely on it for anything important.
