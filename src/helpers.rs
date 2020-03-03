@@ -2,8 +2,8 @@ use crate::state_access::{CloneState, StateAccess};
 use crate::state_functions::use_state;
 
 /// call the provided function once and once only
-/// returns a droptype which will allow the do_once
-/// to repeat if .execute_if_activated() is called on the droptype.
+/// returns a unmmunt which will allow the do_once
+/// to repeat if .execute_if_activated() is called on the unmount.
 /// Example
 ///
 /// do_once(||{

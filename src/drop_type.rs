@@ -1,21 +1,21 @@
 use crate::StateAccess;
 
-pub struct DropType {
+pub struct Unmount {
     pub activated: bool,
-    pub on_drop: Box<dyn Fn() -> ()>,
+    pub on_unmount: Box<dyn Fn() -> ()>,
 }
 
-impl DropType {
-    pub fn new(on_drop: impl Fn() -> () + 'static) -> Self {
+impl Unmount {
+    pub fn new(on_unmount: impl Fn() -> () + 'static) -> Self {
         Self {
             activated: true,
-            on_drop: Box::new(on_drop),
+            on_unmount: Box::new(on_unmount),
         }
     }
 
     pub fn execute_if_activated(&self) {
         if self.activated {
-            (self.on_drop)();
+            (self.on_unmount)();
         }
     }
 
@@ -27,13 +27,13 @@ impl DropType {
     }
 }
 
-pub trait StateAccessDropType {
+pub trait StateAccessUnmount {
     fn activate(&self);
     fn deactivate(&self);
     fn execute_and_remove(self);
 }
 
-impl StateAccessDropType for StateAccess<DropType> {
+impl StateAccessUnmount for StateAccess<Unmount> {
     fn execute_and_remove(self) {
         self.update(|dt| {
             dt.execute_if_activated();

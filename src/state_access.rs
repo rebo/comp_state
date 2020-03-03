@@ -50,8 +50,8 @@ where
         self.remove();
     }
 
-    pub fn reset_on_drop(self) -> Self {
-        use_drop_type(move || self.delete());
+    pub fn reset_on_unmount(self) -> Self {
+        use_unmount(move || self.delete());
         self
     }
 

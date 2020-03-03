@@ -28,11 +28,11 @@
 pub use topo;
 
 // Re exports
-pub use crate::drop_type::{DropType, StateAccessDropType};
 pub use crate::helpers::do_once;
 pub use crate::state_access::{ChangedState, CloneState, StateAccess};
 pub use crate::state_functions::{
-    clone_state_with_topo_id, execute_and_remove_drop_types, new_state, purge_and_reset_unseen_ids,
-    reset_unseen_id_list, set_state_with_topo_id, unseen_ids, update_state_with_topo_id,
-    use_drop_type, use_state, use_state_current,
+    clone_state_with_topo_id, execute_and_remove_unmounts, new_state, purge_and_reset_unseen_ids,
+    reset_unseen_id_list, set_state_with_topo_id, unseen_ids, update_state_with_topo_id, use_state,
+    use_state_current, use_unmount,
 };
+pub use crate::unmount::{StateAccessUnmount, Unmount};

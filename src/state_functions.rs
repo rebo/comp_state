@@ -1,7 +1,7 @@
-use crate::drop_type::DropType;
 use crate::state_access::CloneState;
 use crate::state_access::StateAccess;
 use crate::store::Store;
+use crate::unmount::Unmount;
 use std::cell::RefCell;
 use std::collections::HashSet;
 
@@ -175,16 +175,16 @@ pub fn unseen_ids() -> Vec<topo::Id> {
 //     Arc::new(move || get_state_with_topo_id::<T>(current_id))
 // }
 
-pub fn execute_and_remove_drop_types() {
+pub fn execute_and_remove_unmounts() {
     for id in unseen_ids() {
-        if state_exists_for_topo_id::<DropType>(id) {
-            read_state_with_topo_id::<DropType, _, _>(id, |dt| dt.execute_if_activated());
-            remove_state_with_topo_id::<DropType>(id);
+        if state_exists_for_topo_id::<Unmount>(id) {
+            read_state_with_topo_id::<Unmount, _, _>(id, |dt| dt.execute_if_activated());
+            remove_state_with_topo_id::<Unmount>(id);
         }
     }
 }
 
 #[topo::nested]
-pub fn use_drop_type<F: Fn() -> () + 'static>(drop_fn: F) -> StateAccess<DropType> {
-    use_state(|| DropType::new(drop_fn))
+pub fn use_unmount<F: Fn() -> () + 'static>(unmount_fn: F) -> StateAccess<Unmount> {
+    use_state(|| Unmount::new(unmount_fn))
 }
