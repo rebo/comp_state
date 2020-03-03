@@ -124,6 +124,9 @@ where
 }
 
 use std::ops::Add;
+use std::ops::Div;
+use std::ops::Mul;
+use std::ops::Sub;
 
 impl<T> Add for StateAccess<T>
 where
@@ -133,5 +136,38 @@ where
 
     fn add(self, other: Self) -> Self::Output {
         self.get_with(|s| other.get_with(|o| *o + *s))
+    }
+}
+
+impl<T> Mul for StateAccess<T>
+where
+    T: Copy + Mul<Output = T> + 'static,
+{
+    type Output = T;
+
+    fn mul(self, other: Self) -> Self::Output {
+        self.get_with(|s| other.get_with(|o| *o * *s))
+    }
+}
+
+impl<T> Div for StateAccess<T>
+where
+    T: Copy + Div<Output = T> + 'static,
+{
+    type Output = T;
+
+    fn div(self, other: Self) -> Self::Output {
+        self.get_with(|s| other.get_with(|o| *o / *s))
+    }
+}
+
+impl<T> Sub for StateAccess<T>
+where
+    T: Copy + Sub<Output = T> + 'static,
+{
+    type Output = T;
+
+    fn sub(self, other: Self) -> Self::Output {
+        self.get_with(|s| other.get_with(|o| *o - *s))
     }
 }
