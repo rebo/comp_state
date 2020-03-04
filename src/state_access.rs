@@ -51,7 +51,7 @@ where
     }
 
     pub fn reset_on_unmount(self) -> Self {
-        use_unmount(move || self.delete());
+        on_unmount(move || self.delete());
         self
     }
 

@@ -185,6 +185,6 @@ pub fn execute_and_remove_unmounts() {
 }
 
 #[topo::nested]
-pub fn use_unmount<F: Fn() -> () + 'static>(unmount_fn: F) -> StateAccess<Unmount> {
+pub fn on_unmount<F: Fn() -> () + 'static>(unmount_fn: F) -> StateAccess<Unmount> {
     use_state(|| Unmount::new(unmount_fn))
 }
