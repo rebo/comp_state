@@ -15,5 +15,5 @@ edition = "2018"
 [dependencies]
 topo = "=0.9.4"
 slotmap = "0.4.0"
-anymap = "0.12.1"
+anymap = "0.12.1" 
 

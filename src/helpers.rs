@@ -10,7 +10,7 @@ use crate::state_functions::use_state;
 ///     println!("This will print only once");
 /// });
 #[topo::nested]
-pub fn do_once<F: Fn() -> ()>(func: F) -> StateAccess<bool> {
+pub fn do_once<F: FnMut() -> ()>(mut func: F) -> StateAccess<bool> {
     let has_done = use_state(|| false);
     if !has_done.get() {
         func();
